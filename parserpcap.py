@@ -1,66 +1,79 @@
-import pandas 
+import numpy 
+import pandas
 import pyshark
-# from scapy.all import sniff, IP, ICMP, UDP, TCP
 
-# TOO SLOW.
-# def pcap_parser(pcap_file_name) -> pandas.DataFrame:
-#     read_pcap = sniff(offline=pcap_file_name)
+"""pcap_dataframe
     
-#     ip_src = []
-#     ip_dst = []
-#     bytecount = []
-#     ports = []
-#     protocols = []
+    The following function will parse the file with extension .pcap into Panda DataFrame.
+    With the help of PyShark, we can dissect the packet's frame information for :
+        Time Stamp
+        Source IP Address
+        Destination IP Address
+        Size of the Packet
+        Protocols
+        
+    Only use with IPv4 pcap files, otherwise source or destination will not be found.
     
-#     for packet in read_pcap:
-        
-#         # IP src & dest column
-#         if packet.haslayer(IP) :
-#             ip_src.append(packet[IP].src)
-#             ip_dst.append(packet[IP].dst)
-            
-#         # Protocol column
-#         if packet.haslayer(TCP):
-#             protocols.append("TCP")
-#             ports.append(packet[TCP].sport)
-#         elif packet.haslayer(UDP):
-#             protocols.append("UDP")
-#             ports.append(packet[UDP].sport)
-#         elif packet.haslayer(ICMP) :
-#             protocols.append("ICMP")
-#             ports.append(packet[ICMP].sport)
-        
-#     data = {
-#         'src' : ip_src,
-#         'dst' : ip_dst,
-#         'port_no' : ports,
-#         'Protocol' : protocols
-#     }
-#     df = pandas.DataFrame(data)
-#     return df
-
-
-[TODO]
-#.delta -> duration.
-#.length
-#.no
-#ip.src
-#ip.dst
-#ip.ttl
-#ip.srchost
-#ip.proto.showname_value.split('(').strip()
-#packet[packet.transport_layer].sport
-def pcap_dataframe(in_pcap) -> pandas.DataFrame:
+"""
+def pcap_dataframe(in_pcap, limit=None) -> pandas.DataFrame:
+    # If specified limits to stop at certain amount of packets.
     counter = 0
+    # Import pcap to read all packets
     packets = pyshark.FileCapture(in_pcap)
     
+    # The columns     
+    source = []
+    destination = []
+    lengths = []
+    protocols = []
+    duration_nsec = []
+    duration_sec = []
+    
     for packet in packets :
-        if counter == 500 :
-            break
+        # Limit specified then we're only noted down this amount of packets
+        if limit is not None and counter == limit :
+            break;
         
+        #Source IP Addresses
+        source.append(packet.ip.src)
+        
+        # Destination IP Addresses
+        destination.append(packet.ip.dst)
+        
+        # Bytes of packet is represented by lengths
+        lengths.append(packet.length)
+        
+        # Convert the time delta to nanosecond. 
+        time_delta_sec = int(float(packet.frame_info.time_delta))
+        duration_sec.append(time_delta_sec)
+        time_delta_nsec = int((float(packet.frame_info.time_delta) - time_delta_sec) * 1e+9)
+        duration_nsec.append(time_delta_nsec)
+        
+        # The protocol of the packet ICMP/UDP/TCP
+        protocols.append(str(packet.ip.proto.showname_value.split('(')[0]).strip())
+        
+        #Increment for packet counts
+        counter += 1
     packets.close()
     
+    duration_nsec = numpy.array(duration_nsec)
     
+    # All traffics in Dictionary
+    traffics = {
+        "src" : source,
+        "dst" : destination,
+        "bytes" : lengths,
+        "dur_nsec" : duration_nsec,
+        "Protocol" : protocols
+    }
     
-pcap_dataframe('attack_ddos.pcap')
+    # Return the Panda DataFrame of the Traffic.
+    return pandas.DataFrame(traffics)
+
+
+# # Pcap file name
+# pcap_file = 'home_traffic.pcap'
+# # Read the pcap file and put it into a DataFrame
+# pcap_data = pcap_dataframe(pcap_file, limit=100)
+# print(pcap_data.head())
 
