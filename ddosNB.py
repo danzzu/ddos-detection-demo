@@ -1,5 +1,6 @@
+from time import monotonic_ns
 from sklearn.model_selection import train_test_split
-from sklearn.naive_bayes import CategoricalNB
+from sklearn.naive_bayes import CategoricalNB, MultinomialNB, BernoulliNB, GaussianNB
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.compose import ColumnTransformer
 import pandas as panda
@@ -38,11 +39,55 @@ y = raw_data['label']
 # Splitting the data for 80% train and 20% test
 X_train, X_test, y_train, y_test = train_test_split(transform_X, y, test_size=0.2, random_state=0)
 
-# Using Naive Bayes Categorical alpha = 1 
-model = CategoricalNB()
+# Use to test our hypothesis (View the report on "System Architecture" section for more details.):
+time_train = []
+scores = []
 
+start = monotonic_ns()
+# Using Naive Bayes Categorical alpha = 1 (default) 
+categorical = CategoricalNB()
 # Fit the training X and Y to the model
-model.fit(X_train,y_train)
+categorical.fit(X_train,y_train)
+ct_score = categorical.score(X_test,y_test)
+end = monotonic_ns()
+time_train.append(round((end - start)/1_000_000))
+scores.append(ct_score)
 
+# Multinomial Comparison.
+start = monotonic_ns()
+multinomial = MultinomialNB()
+multinomial.fit(X_train, y_train)
+mn_score = multinomial.score(X_test, y_test)
+end = monotonic_ns()
+time_train.append(round((end - start)/1_000_000))
+scores.append(mn_score)
+
+# Bernoulli Comparison.
+start = monotonic_ns()
+bernoulli = BernoulliNB()
+bernoulli.fit(X_train, y_train)
+b_score = bernoulli.score(X_test, y_test)
+end = monotonic_ns()
+time_train.append(round((end - start)/1_000_000))
+scores.append(b_score)
+
+# Gaussian Comparison.
+start = monotonic_ns()
+gaussian = GaussianNB()
+gaussian.fit(X_train, y_train)
+g_score = gaussian.score(X_test, y_test)
+end = monotonic_ns()
+time_train.append(round((end - start)/1_000_000))
+scores.append(g_score)
+
+
+models = ["Categorical NB", "Multinomial NB", "Bernoulli NB", "Gaussian NB"]
+
+table = {
+    "Model" : models,
+    "Time(ms)" : time_train,
+    "Score" : scores
+}
 # Print the score/accuracy of the model
-print("Accuracy from Test : ", model.score(X_test,y_test) * 100, "%")
+table_frame = panda.DataFrame(table)
+print(table_frame)
