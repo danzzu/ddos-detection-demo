@@ -15,6 +15,7 @@ Train multiple Artificial Intelligence models on detecting various type of DDoS 
 
 ## Research Report
 
-[a relative link](AI-Powered DDoS Detection Final Report.pdf)
+[AI-Powered DDoS Detection Final Report.pdf](https://github.com/danzzu/ddos-detection-demo/blob/main/AI-Powered%20DDoS%20Detection%20Final%20Report.pdf)
+
 
 ---
