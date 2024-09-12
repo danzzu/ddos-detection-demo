@@ -15,5 +15,6 @@ Train multiple Artificial Intelligence models on detecting various type of DDoS 
 
 ## Research Report
 
+[a relative link](AI-Powered DDoS Detection Final Report.pdf)
 
 ---
